@@ -1,0 +1,327 @@
+﻿
+@{
+    <a href="~/Areas/admin/Views/MonHoc/Index.cshtml">~/Areas/admin/Views/MonHoc/Index.cshtml</a>
+    ViewBag.Title = "Index";
+    Layout = "~/Areas/admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-sm-4">
+        <button class="btn btn-success" style="margin-bottom:10px" id="btnAdd">
+            <i style="margin-right:5px" class="fa fa-plus" aria-hidden="true"></i>
+            Thêm mới môn học
+        </button>
+    </div>
+    <div class="col-sm-3 col-sm-offset-5 text-right">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Tìm kiếm" id="txtSearch" />
+            <div class="input-group-btn">
+                <button class="btn btn-primary" type="submit" id="btnSearch">
+                    <span class="glyphicon glyphicon-search"></span>
+
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*TABLE*@
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Lớp
+            </th>
+            <th>
+                Tên môn học
+            </th>
+            <th>
+                Meta
+            </th>
+            <th>
+                Hành động
+            </th>
+
+        </tr>
+    </thead>
+    <tbody id="tblDsMonHoc">
+    </tbody>
+
+</table>
+
+@*MODAL*@
+<div class="modal" tabindex="-1" role="dialog" id="modalMonHoc">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="panel panel-primary">
+                <div class="panel-heading" id="modalTitle"></div>
+
+            </div>
+            <div class="modal-body">
+                <input type="text" hidden id="idMonHoc" value="" />
+
+                <form>
+                    <div class="form-group">
+                        <label>Lớp</label>
+                        <select class="form-control" id="selectLop">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tên môn học</label>
+                        <input type="text" class="form-control" id="tenMonHoc" placeholder="Nhập tên môn học">
+                    </div>
+                    <div class="form-group">
+                        <label>Meta</label>
+                        <input type="text" class="form-control" id="metaMonHoc" placeholder="Thẻ meta">
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnSubmit">Xác nhận</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <script>
+
+        var tuKhoa = '';
+        $(document).ready(function () {
+            loadDsLop();
+            LoadDsMonHoc(tuKhoa)
+        });
+
+        //function loadDSLop
+        function loadDsLop() {
+            $.ajax({
+                url: "/admin/lop/AllLop",
+                type: "get",
+                success: function (data) {
+                    if (data.code == 200) {
+                        $.each(data.allLop, function (k, v) {
+                            let opt = '<option value="' + v.MaLop + '">' + v.TenLop + '</option>';
+                            $('#selectLop').append(opt);
+                        });
+                        console.log(data)
+                    };
+
+                },
+
+            });
+        }
+
+        // Thêm mới
+        $("#btnAdd").click(function () {
+
+            $("#modalTitle").text("Thêm mới môn học");
+            //set các giá trị mặc định
+            $("#metaMonHoc").val("");
+            $("#tenMonHoc").val("");
+
+            //cho phép chỉnh sửa
+            // Readonly
+            $("#tenMonHoc").prop('readonly', false);
+            $("#metaMonHoc").prop('readonly', false);
+
+
+            $("#idMonHoc").val(""); // để đánh dấu trường hợp thêm mới
+            $("#modalMonHoc").modal();
+        });
+
+        //Btn Submit
+        $("#btnSubmit").click(function () {
+            let idLop = $("#selectLop").val();
+            let tenMonHoc = $('#tenMonHoc').val().trim();
+            let metaMonHoc = $('#metaMonHoc').val().trim();
+
+            //validate
+            if (tenMonHoc.length == 0 || metaMonHoc.length == 0) {
+                alert("Vui lòng nhập đầy đủ thông tin");
+                return;
+            }
+
+            let idMonHoc = $("#idMonHoc").val().trim();
+
+
+            if (idMonHoc.length == 0) {
+                //thêm mới và cập nhật
+                $.ajax({
+                    url: '/admin/monhoc/AddMonHoc',
+                    type: 'post',
+                    data: {
+                        tenMonHoc: tenMonHoc,
+                        metaMonHoc: metaMonHoc,
+                        idLop: idLop,
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.msg);
+                            $("#tenMonHoc").val('');
+
+                            $("#metaMonHoc").val('');
+                            LoadDsMonHoc(tuKhoa);
+                        }
+                    }
+
+                });
+                //cập nhật
+            } else {
+                $.ajax({
+                    url: "/admin/monhoc/EditMonHoc",
+                    type: "post",
+                    data: {
+                        id: idMonHoc,
+                        tenMonHoc: tenMonHoc,
+                        metaMonHoc: metaMonHoc,
+                        idLop: idLop
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.msg);
+                            $("#modalMonHoc").modal('hide');
+                            LoadDsMonHoc(tuKhoa);
+                        }
+                    }
+                })
+            }
+
+        });
+        //xóa
+        $(document).on('click', "button[name = 'delete']", function () {
+            let id = $(this).closest('tr').attr('id');
+            if (confirm("Bạn thực sự muốn xóa lớp môn học này ?")) {
+                $.ajax({
+                    url: '/admin/monhoc/xoa',
+                    type: 'post',
+                    data: {
+                        id: id
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.msg);
+                            LoadDsMonHoc(tuKhoa);
+                        } else {
+                            alert(data.msg);
+
+                        }
+                    }
+                });
+            };
+
+        });
+
+        //Sửa
+        $(document).on('click', "button[name = 'update']", function () {
+
+            let idLop = $(this).closest('tr').attr('id');
+
+            let id = $(this).closest('tr').attr('id');
+
+            //set value cho input để đánh dấu cập nhật
+            $("#idMonHoc").val(id);
+            ChitietMH(id);
+            // Readonly
+            $("#tenMonHoc").prop('readonly', false);
+            $("#metaMonHoc").prop('readonly', false);
+
+
+            $('#modalTitle').text("Cập nhật môn học");
+            //hide btn XacNhan
+            $("#btnSubmit").show();
+            $("#modalMonHoc").modal();
+
+        });
+
+
+        //Chi tiết
+        $(document).on('click', "button[name = 'view']", function () {
+
+            let id = $(this).closest('tr').attr('id');
+            ChitietMH(id);
+            // Readonly
+            $("#tenMonHoc").prop('readonly', true);
+            $("#metaMonHoc").prop('readonly', true);
+
+            $('#modalTitle').text("Thông tin chi tiết môn học");
+            //hide btn XacNhan
+            $("#btnSubmit").hide();
+            $("#modalMonHoc").modal();
+        });
+
+        //function tách ChiTietMonHoc
+        function ChitietMH(id) {
+            $.ajax({
+                url: '/admin/monhoc/ChiTiet',
+                type: 'get',
+                data: {
+                    id: id
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        $("#tenMonHoc").val(data.mh.TenMonHoc);
+                        $("#metaMonHoc").val(data.mh.Meta);
+                        //set giá trị cho select
+                        $('#selectLop').val(data.mh.MaLop);
+                    } else {
+                        alert(data.msg);
+                    }
+                }
+            });
+        }
+
+
+        //func loadDSMONHOC
+        function LoadDsMonHoc(tuKhoa) {
+            $.ajax({
+                url: '/admin/monhoc/DsMonHoc',
+                type: 'get',
+                data: {
+                    tuKhoa: tuKhoa,
+                },
+                success: function (data) {
+                    /*console.log(data);*/
+                    if (data.code == 200) {
+                        $("#tblDsMonHoc").empty();
+                        $.each(data.dsMonHoc, function (k, v) {
+                            let tr = '<tr id="' + v.MaLop + '">'
+                            tr += '<td class = "col-sm-2">' + v.TenLop + '</td>';
+                            tr += '<td class = "col-sm-4">' + v.TenMonHoc + '</td>';
+                            tr += '<td class = "col-sm-2">' + v.Meta + '</td>';
+                            tr += '<td class = "col-sm-4">';
+                            tr += '<button  class ="btn btn-xs btn-info" name = "view"><i style = "margin:0 3px" class="fa fa-info-circle" aria-hidden="true"></i>Chi tiết</button>';
+                            tr += '<button style = "margin:0 10px" class ="btn btn-xs btn-warning" name = "update"><i style = "margin:0 3px" class="fa fa-pencil-square-o" aria-hidden="true"></i>Cập nhật</button>';
+                            tr += '<button class ="btn btn-xs btn-danger" name = "delete"><i style = "margin:0 3px" class="fa fa-trash" aria-hidden="true"></i>Xóa</button>';
+                            tr += '</td>';
+                            tr += '</tr > ';
+                            $("#tblDsMonHoc").append(tr);
+                        });
+                    }
+                }
+            })
+        }
+
+
+        //SEARCH
+        $("#txtSearch").on('keypress', function (e) {
+            if (e.which == 13) {
+                $('#btnSearch').click();
+            }
+
+        });
+        $("#btnSearch").click(function () {
+            tuKhoa = $("#txtSearch").val();
+            LoadDsMonHoc(tuKhoa);
+        });
+
+
+    </script>
+
+
+}
+
+

@@ -1,0 +1,171 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Areas/admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h2>Quản lý giảng dạy</h2>
+
+<div class="row">
+    <div class="col-sm-4">
+        <button class="btn btn-success" style="margin-bottom:10px" id="btnAdd">
+            <i style="margin-right:5px" class="fa fa-plus" aria-hidden="true"></i>
+            Thêm mới giảng dạy
+        </button>
+    </div>
+    <div class="col-sm-3 col-sm-offset-5 text-right">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Tìm kiếm" id="txtSearch" />
+            <div class="input-group-btn">
+                <button class="btn btn-primary" type="submit" id="btnSearch">
+                    <span class="glyphicon glyphicon-search"></span>
+
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Giáo viên
+            </th>
+            <th>
+                Môn học
+            </th>
+            <th>
+                Từ ngày
+            </th>
+            <th>
+                Tới ngày
+            </th>
+            <th></th>
+
+        </tr>
+    </thead>
+    <tbody id="tblGiangDay">
+    </tbody>
+
+</table>
+<div class="modal" tabindex="-1" role="dialog" id="modalGiangDay">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="panel panel-primary">
+                <div class="panel-heading" id="modalTitle"></div>
+
+            </div>
+            <div class="modal-body">
+                <input type="text" hidden id="idGiangDay" value="" />
+                <form>
+                    <div class="form-group">
+                        <label>Môn học</label>
+                        <select class="form-control" id="selectMon"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Giáo viên</label>
+                        <select class="form-control" id="selectGiaoVien"></select>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label>Từ ngày</label>
+                                <div class="input-group date" data-provide="datepicker">
+                                    <input type="text" class="form-control" />
+                                    <div class="input-group-addon">
+                                        <span class="glyphicon glyphicon-th"></span>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label>Đến ngày</label>
+                                <div class="input-group date" data-provide="datepicker">
+                                    <input type="text" class="form-control" />
+                                    <div class="input-group-addon">
+                                        <span class="glyphicon glyphicon-th"></span>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnSubmit">Xác nhận</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section scripts{
+    <link href="~/Content/datepicker/css/bootstrap-datepicker.css" rel="stylesheet" />
+    <script src="~/Content/datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            loadDsGv();
+            loadDsMh();
+        })
+
+        //date picker
+        $('.datepicker').datepicker();
+
+        //sự kiện add
+        $("#btnAdd").click(function () {
+            $("#modalTitle").text("Thêm mới giảng dạy");
+            $('#modalGiangDay').modal();
+        });
+
+        //hàm load ds Giáo viên cho select giáo viên
+
+        function loadDsGv() {
+            $.ajax({
+                url: "/admin/giaovien/AllGiaoVien",
+                type: "get",
+                success: function (data) {
+                    if (data.code == 200) {
+                        $('#selectGiaoVien').empty();
+                        $.each(data.dsGv, function (k, v) {
+                            let opt = '<option value = "' + v.MaGiaoVien + '">' + v.HoTen + '</option>';
+                            $('#selectGiaoVien').append(opt);
+                        });
+                    } else {
+                        alert(data.msg);
+                    }
+                }
+            })
+        }
+
+        // Hàm load ds môn học đổ dữ liệu cho select môn học
+        function loadDsMh() {
+            $.ajax({
+                url: "/admin/giaovien/AllMonHoc",
+                type: "get",
+                success: function (data) {
+                    if (data.code == 200) {
+                        //$('#selectMon').empty();
+                        //$.each(data.allMh, function (k, v) {
+                        //    let opt = '<option value = "' + v.MaMonHoc + '">' + v.TenMH + '</option>';
+                        //    $('#selectMon').append(opt);
+                            
+                        //});
+                        console.log(data);
+                        
+                    } else {
+                        alert(data.msg);
+                    }
+                }
+            })
+        }
+
+
+    </script>
+    }

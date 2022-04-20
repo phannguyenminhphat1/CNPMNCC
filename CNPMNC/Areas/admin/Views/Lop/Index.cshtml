@@ -1,0 +1,301 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Areas/admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="row">
+    <div class="col-sm-4">
+        <button class="btn btn-success" style="margin-bottom:10px" id="btnAdd">
+            <i style="margin-right:5px" class="fa fa-plus" aria-hidden="true"></i>
+            Thêm mới lớp
+        </button>
+    </div>
+    <div class="col-sm-3 col-sm-offset-5 text-right">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Tìm kiếm" id="txtSearch"/>
+            <div class="input-group-btn" >
+                <button class="btn btn-primary" type="submit" id="btnSearch">
+                    <span class="glyphicon glyphicon-search"></span>
+
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Tên lớp
+            </th>
+            <th>
+                Meta
+            </th>
+            <th>
+                Hành động
+            </th>
+
+        </tr>
+    </thead>
+    <tbody id="tblDslop">
+    </tbody>
+
+</table>
+<div class="modal" tabindex="-1" role="dialog" id="modalLop">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="panel panel-primary">
+                <div class="panel-heading" id="modalTitle"></div>
+
+            </div>
+            <div class="modal-body">
+                <input type="text" hidden id="idLop" value="" />
+                <form>
+                    <div class="form-group">
+                        <label>Tên lớp</label>
+                        <input type="text" class="form-control" id="tenLop" aria-describedby="emailHelp" placeholder="Nhập tên lớp">
+                    </div>
+                    <div class="form-group">
+                        <label>Meta</label>
+                        <input type="text" class="form-control" id="meta" placeholder="Thẻ meta">
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnSubmit">Xác nhận</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+
+@section scripts{
+
+    <script>
+        var tuKhoa = '';
+        $(document).ready(function () {
+            LoadDsLop(tuKhoa);
+        });
+
+
+        //Tìm kiếm
+        $("#btnSearch").click(function () {
+            tuKhoa = $("#txtSearch").val();
+            LoadDsLop(tuKhoa);
+        });
+        $("#txtSearch").on('keypress', function (e) {
+            if (e.which == 13) {
+                $('#btnSearch').click();
+            }
+
+        });
+
+        //xóa
+        $(document).on('click', "button[name = 'delete']", function () {
+            let idLop = $(this).closest('tr').attr('id');
+            if (confirm("Bạn thực sự muốn xóa lớp học này ?")) {
+                $.ajax({
+                    url: '/admin/lop/XoaLop',
+                    type: 'post',
+                    data: {
+                        id: idLop
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.msg);
+                            LoadDsLop(tuKhoa);
+                        } else {
+                            alert(data.msg);
+
+                        }
+                    }
+                });
+            };
+
+        });
+
+        //Sửa
+        $(document).on('click', "button[name = 'update']", function () {
+            $("#modalTitle").text("Sửa lớp học");
+
+            let idLop = $(this).closest('tr').attr('id');
+            $.ajax({
+                url: '/admin/lop/ChiTiet',
+                type: 'get',
+                data: {
+                    id: idLop
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        $("#tenLop").val(data.L.TenLop);
+                        $("#meta").val(data.L.Meta);
+
+                        $("#idLop").val(idLop);
+
+                        // Readonly
+                        $("#tenLop").prop('readonly', false);
+                        $("#meta").prop('readonly', false);
+
+                        //hide btn XacNhan
+                        $("#btnSubmit").show();
+
+
+
+                        $("#modalLop").modal();
+                    } else {
+                        alert(data.msg);
+                    }
+                }
+            });
+        });
+
+
+        //Chi tiết
+        $(document).on('click', "button[name = 'view']", function () {
+            $("#modalTitle").text("Chi tiết lớp học");
+
+            let idLop = $(this).closest('tr').attr('id');
+            $.ajax({
+                url: '/admin/lop/ChiTiet',
+                type: 'get',
+                data: {
+                    id: idLop
+                },
+                success: function (data) {
+                    if (data.code == 200) {
+                        $("#tenLop").val(data.L.TenLop);
+                        $("#meta").val(data.L.Meta);
+
+                        // Readonly
+                        $("#tenLop").prop('readonly', true);
+                        $("#meta").prop('readonly', true);
+
+                        //hide btn XacNhan
+                        $("#btnSubmit").hide();
+
+
+
+                        $("#modalLop").modal();
+                    } else {
+                        alert(data.msg);
+                    }
+                }
+            });
+        });
+
+        
+
+        $("#btnSubmit").click(function () {
+            let tenLop = $("#tenLop").val().trim();
+            let meta = $("#meta").val().trim();
+            //ràng buộc dữ liệu
+            if (tenLop.length == 0 || meta.length == 0) {
+                alert("Vui lòng nhập đầy đủ dữ liệu để tiếp tục");
+                return
+            }
+            // Thêm mới
+
+            let idLop = $('#idLop').val().trim();
+            if (idLop.length == 0) {
+                $.ajax({
+                    url: '/admin/lop/AddLop',
+                    type: 'post',
+                    data: {
+                        tenLop: tenLop,
+                        meta: meta,
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.msg);
+                            LoadDsLop(tuKhoa);
+                            $("#tenLop").val('');
+                            $("#meta").val('');
+                        } else {
+                            alert(data.msg);
+                        }
+                    }
+                });
+                // id > 0 thì nó là cập nhật
+            } else {
+                $.ajax({
+                    url: '/admin/lop/CapNhat',
+                    type: 'post',
+                    data: {
+                        id: idLop,
+                        tenLop: tenLop,
+                        meta: meta
+                    },
+                    success: function (data) {
+                        if (data.code == 200) {
+                            alert(data.msg);
+                            $("#modalLop").modal("hide");
+
+                            //load lại ds lop sau khi cập nhật
+                            LoadDsLop(tuKhoa);
+
+                        } else {
+                            alert(data.msg);
+
+                        }
+                    }
+                });
+            }
+            
+
+
+        });
+        //Add
+        $("#btnAdd").click(function () {
+
+            $("#modalTitle").text("Thêm mới lớp học");
+            $("#idLop").val('');
+            $('#tenLop').val('');
+            $('#meta').val('');
+
+            // Readonly
+            $("#tenLop").prop('readonly', false);
+            $("#meta").prop('readonly', false);
+
+            //hide btn XacNhan
+            $("#btnSubmit").show();
+            $("#modalLop").modal();
+        });
+
+
+        //Load DS Lớp
+        function LoadDsLop(search) {
+            $.ajax({
+                url: '/admin/lop/DsLop',
+                type: 'get',
+                data: {
+                    tuKhoa: search,
+                },
+                success: function (data) {
+                    /*console.log(data);*/
+                    if (data.code == 200) {
+                        $("#tblDslop").empty();
+                        $.each(data.dsLop, function (k, v) {
+                            let tr = '<tr id="' + v.MaLop + '">'
+                            tr += '<td class = "col-sm-5">' + v.TenLop + '</td>';
+                            tr += '<td class = "col-sm-3">' + v.Meta + '</td>';
+                            tr += '<td class = "col-sm-4">';
+                            tr += '<button  class ="btn btn-xs btn-info" name = "view"><i style = "margin:0 3px" class="fa fa-info-circle" aria-hidden="true"></i>Chi tiết</button>';
+                            tr += '<button style = "margin:0 10px" class ="btn btn-xs btn-warning" name = "update"><i style = "margin:0 3px" class="fa fa-pencil-square-o" aria-hidden="true"></i>Cập nhật</button>';
+                            tr += '<button class ="btn btn-xs btn-danger" name = "delete"><i style = "margin:0 3px" class="fa fa-trash" aria-hidden="true"></i>Xóa</button>';
+                            tr += '</td>';
+                            tr += '</tr > ';
+                            $("#tblDslop").append(tr);
+                        });
+                    }
+                }
+            })
+        }
+    </script>
+}
